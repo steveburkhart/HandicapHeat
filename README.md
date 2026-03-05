@@ -4,4 +4,4 @@ Copy this API Key in the next screen
 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
 
 
-Procede to github.com/steveburkhart/HandicapHeat/index.html
+Procede to https://steveburkhart/github.io/HandicapHeat/index.html
