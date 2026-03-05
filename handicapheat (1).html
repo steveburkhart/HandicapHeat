@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Handicap Heat">
+<meta name="theme-color" content="#0a1628">
+<title>Handicap Heat</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --pool:   #0a1628;
+  --foam:   #5bc8f5;
+  --gold:   #f5c842;
+  --silver: #b0c4d8;
+  --accent: #00e5ff;
+  --text:   #e8f4ff;
+  --muted:  #4a7fa0;
+  --ll:     rgba(91,200,245,0.13);
+  --danger: #ff5a5a;
+  --ok:     #4cff9f;
+  --card:   rgba(13,34,64,0.85);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body { height:100%; }
+
+body {
+  background: var(--pool);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,transparent,transparent 60px,var(--ll) 60px,var(--ll) 62px),
+    linear-gradient(180deg,#060f1e 0%,#0a1e3a 40%,#0e2d4f 100%);
+}
+
+/* ── SCREENS ── */
+.screen {
+  position:relative; z-index:1;
+  max-width:560px; margin:0 auto;
+  padding: calc(var(--safe-top) + 32px) 20px calc(var(--safe-bot) + 48px);
+  display:none;
+}
+.screen.active { display:block; }
+
+/* ── SHARED HEADER ── */
+.logo {
+  text-align:center; margin-bottom:32px;
+}
+.logo-title {
+  font-family:'Bebas Neue',cursive;
+  font-size:clamp(3.2rem,10vw,5.5rem);
+  letter-spacing:0.05em; line-height:1;
+  color:var(--accent);
+  text-shadow:0 0 40px rgba(0,229,255,0.4),0 0 80px rgba(0,229,255,0.15);
+}
+.logo-sub {
+  font-size:0.68rem; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--muted); margin-top:6px;
+}
+
+/* ── MODE SELECT ── */
+#screen-mode .mode-cards {
+  display:flex; flex-direction:column; gap:14px; margin-bottom:32px;
+}
+.mode-card {
+  background:var(--card);
+  border:1px solid rgba(91,200,245,0.2);
+  border-radius:6px; padding:24px 22px;
+  cursor:pointer; transition:all 0.22s;
+  display:flex; align-items:center; gap:18px;
+  -webkit-user-select:none; user-select:none;
+}
+.mode-card:hover, .mode-card:active {
+  border-color:var(--accent);
+  background:rgba(0,229,255,0.06);
+  transform:translateY(-2px);
+  box-shadow:0 6px 24px rgba(0,229,255,0.12);
+}
+.mode-icon { font-size:2.2rem; flex-shrink:0; }
+.mode-info {}
+.mode-name {
+  font-family:'Bebas Neue',cursive;
+  font-size:1.5rem; letter-spacing:0.06em; color:var(--text);
+}
+.mode-desc {
+  font-size:0.68rem; color:var(--muted);
+  letter-spacing:0.06em; line-height:1.5; margin-top:2px;
+}
+
+/* ── SETUP SCREEN ── */
+.section-label {
+  font-size:0.6rem; letter-spacing:0.28em;
+  text-transform:uppercase; color:var(--muted);
+  margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+}
+.section-label::after { content:''; flex:1; height:1px; background:var(--ll); }
+
+/* API key styles removed — CSV mode needs no API key */
+
+/* Upload */
+.upload-zone {
+  border:2px dashed rgba(91,200,245,0.28);
+  border-radius:6px; padding:28px 20px;
+  text-align:center; cursor:pointer;
+  transition:all 0.22s;
+  background:rgba(13,34,64,0.5);
+  position:relative; margin-bottom:12px;
+}
+.upload-zone:hover,.upload-zone.drag-over {
+  border-color:var(--accent);
+  background:rgba(0,229,255,0.05);
+  box-shadow:0 0 20px rgba(0,229,255,0.1);
+}
+.upload-zone input[type=file] {
+  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
+}
+.upload-icon { font-size:1.8rem; margin-bottom:8px; }
+.upload-title {
+  font-family:'Bebas Neue',cursive;
+  font-size:1.2rem; letter-spacing:0.1em; color:var(--foam); margin-bottom:3px;
+}
+.upload-hint-text {
+  font-size:0.65rem; letter-spacing:0.12em; color:var(--muted); text-transform:uppercase;
+}
+.upload-hint-text em { font-style:normal; color:var(--accent); }
+
+.format-note {
+  padding:10px 14px; margin-bottom:18px;
+  background:rgba(0,229,255,0.04);
+  border:1px solid rgba(0,229,255,0.1);
+  border-radius:2px;
+  font-size:0.63rem; color:var(--muted);
+  letter-spacing:0.05em; line-height:1.7;
+}
+.format-note strong { color:var(--silver); }
+
+.parse-status {
+  padding:10px 14px; border-radius:2px;
+  font-size:0.7rem; letter-spacing:0.07em;
+  display:none; align-items:center; gap:10px;
+  margin-bottom:18px;
+}
+.parse-status.loading { display:flex; background:rgba(0,229,255,0.07); border:1px solid rgba(0,229,255,0.2); color:var(--accent); }
+.parse-status.success { display:flex; background:rgba(76,255,159,0.07); border:1px solid rgba(76,255,159,0.2); color:var(--ok); }
+.parse-status.error   { display:flex; background:rgba(255,90,90,0.07);  border:1px solid rgba(255,90,90,0.2);  color:var(--danger); }
+.spinner {
+  width:14px; height:14px; flex-shrink:0;
+  border:2px solid rgba(0,229,255,0.3); border-top-color:var(--accent);
+  border-radius:50%; animation:spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Selectors */
+.selector-pair {
+  display:grid; grid-template-columns:1fr 28px 1fr;
+  gap:10px; align-items:end; margin-bottom:20px;
+}
+.sel-group { display:flex; flex-direction:column; gap:5px; }
+.sel-group label { font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--muted); }
+.sel-vs {
+  font-family:'Bebas Neue',cursive; font-size:1.4rem;
+  color:var(--muted); opacity:0.5; text-align:center; padding-bottom:8px;
+}
+.swimmer-select {
+  width:100%;
+  background:rgba(10,28,54,0.95);
+  border:1px solid rgba(91,200,245,0.28);
+  border-radius:4px; color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:0.75rem; padding:10px 30px 10px 12px;
+  cursor:pointer; appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%234a7fa0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+  transition:border-color 0.2s;
+}
+.swimmer-select:focus { outline:none; border-color:var(--accent); }
+.swimmer-select option { background:#0a1e3a; color:var(--text); }
+.swimmer-select option:disabled { color:var(--muted); }
+
+/* Handicap banner */
+.handicap-banner {
+  background:rgba(245,200,66,0.07);
+  border:1px solid rgba(245,200,66,0.22);
+  border-radius:4px; padding:12px 16px;
+  margin-bottom:20px;
+  font-size:0.72rem; color:var(--gold); letter-spacing:0.06em;
+  display:none;
+}
+.handicap-banner.visible { display:block; }
+
+/* ── RACE SCREEN ── */
+#screen-race .race-header {
+  text-align:center; margin-bottom:24px;
+}
+.race-round {
+  font-size:0.6rem; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:4px;
+}
+.race-title {
+  font-family:'Bebas Neue',cursive;
+  font-size:2rem; letter-spacing:0.06em; color:var(--text);
+}
+
+/* Matchup cards */
+.matchup {
+  display:grid; grid-template-columns:1fr 28px 1fr;
+  gap:10px; align-items:center; margin-bottom:16px;
+}
+.swimmer-card {
+  background:var(--card);
+  border:1px solid rgba(91,200,245,0.18);
+  border-radius:6px; padding:16px;
+  position:relative; overflow:hidden;
+}
+.swimmer-card::before {
+  content:''; position:absolute;
+  top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  opacity:0; transition:opacity 0.3s;
+}
+.swimmer-card.active::before { opacity:1; }
+.card-lane {
+  font-family:'Bebas Neue',cursive;
+  font-size:0.72rem; letter-spacing:0.2em; color:var(--muted); margin-bottom:3px;
+}
+.card-name {
+  font-family:'Bebas Neue',cursive;
+  font-size:1.3rem; letter-spacing:0.04em; color:var(--text);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:2px;
+}
+.card-event { font-size:0.58rem; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.card-time  { font-size:1.1rem; color:var(--foam); font-weight:500; }
+.card-tag {
+  display:inline-block; margin-top:6px;
+  padding:2px 8px; font-size:0.56rem;
+  letter-spacing:0.16em; text-transform:uppercase;
+  border-radius:2px; font-weight:500;
+}
+.card-tag.has-start { background:rgba(245,200,66,0.14); color:var(--gold); border:1px solid rgba(245,200,66,0.28); }
+.card-tag.scratch   { background:rgba(0,229,255,0.08);  color:var(--accent); border:1px solid rgba(0,229,255,0.18); }
+.card-vs {
+  font-family:'Bebas Neue',cursive; font-size:1.6rem;
+  color:var(--muted); opacity:0.5; text-align:center;
+}
+
+/* Countdown display */
+.countdown-display {
+  text-align:center; padding:20px 0 8px;
+  min-height:90px; display:flex;
+  flex-direction:column; align-items:center; justify-content:center;
+}
+.countdown-num {
+  font-family:'Bebas Neue',cursive;
+  font-size:5rem; line-height:1;
+  color:var(--accent);
+  text-shadow:0 0 40px rgba(0,229,255,0.5);
+  transition:opacity 0.3s, transform 0.3s;
+}
+.countdown-cue {
+  font-family:'Bebas Neue',cursive;
+  font-size:1.4rem; letter-spacing:0.08em;
+  margin-top:4px; min-height:2rem;
+  transition:opacity 0.5s;
+}
+
+/* ── BRACKET SCREEN ── */
+#screen-bracket { max-width:700px; }
+.bracket-title {
+  font-family:'Bebas Neue',cursive;
+  font-size:2.2rem; letter-spacing:0.06em;
+  color:var(--accent); margin-bottom:4px;
+}
+.bracket-sub { font-size:0.65rem; letter-spacing:0.18em; color:var(--muted); margin-bottom:24px; text-transform:uppercase; }
+
+.bracket-round-label {
+  font-size:0.58rem; letter-spacing:0.28em;
+  text-transform:uppercase; color:var(--muted);
+  margin:0 0 10px;
+  display:flex; align-items:center; gap:8px;
+}
+.bracket-round-label::after { content:''; flex:1; height:1px; background:var(--ll); }
+
+.bracket-matches { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; }
+
+.bracket-match {
+  background:var(--card);
+  border:1px solid rgba(91,200,245,0.16);
+  border-radius:6px; padding:14px 16px;
+  display:flex; align-items:center; gap:12px;
+  cursor:pointer; transition:all 0.2s;
+  -webkit-user-select:none; user-select:none;
+}
+.bracket-match:hover { border-color:rgba(91,200,245,0.4); background:rgba(0,229,255,0.04); }
+.bracket-match.completed { opacity:0.5; cursor:default; }
+.bracket-match.completed:hover { border-color:rgba(91,200,245,0.16); background:var(--card); }
+.bracket-match.current {
+  border-color:var(--accent);
+  box-shadow:0 0 16px rgba(0,229,255,0.15);
+}
+
+.match-num {
+  font-family:'Bebas Neue',cursive;
+  font-size:0.8rem; letter-spacing:0.1em;
+  color:var(--muted); flex-shrink:0; width:28px;
+}
+.match-swimmers { flex:1; display:flex; flex-direction:column; gap:4px; }
+.match-swimmer {
+  font-size:0.78rem; letter-spacing:0.04em;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.match-swimmer.winner { color:var(--gold); }
+.match-swimmer.loser  { color:var(--muted); }
+.match-swimmer.tbd    { color:rgba(74,127,160,0.5); font-style:italic; }
+.match-time { font-size:0.65rem; color:var(--muted); }
+.match-winner-time { font-size:0.65rem; color:var(--gold); }
+.match-vs {
+  font-family:'Bebas Neue',cursive;
+  font-size:0.75rem; color:var(--muted);
+  opacity:0.5; flex-shrink:0;
+}
+.match-badge {
+  font-size:0.6rem; letter-spacing:0.12em;
+  text-transform:uppercase; flex-shrink:0; padding:3px 8px;
+  border-radius:2px;
+}
+.match-badge.go { background:rgba(0,229,255,0.1); color:var(--accent); border:1px solid rgba(0,229,255,0.2); }
+.match-badge.done { background:rgba(76,255,159,0.08); color:var(--ok); border:1px solid rgba(76,255,159,0.18); }
+.match-badge.wait { background:rgba(74,127,160,0.08); color:var(--muted); border:1px solid rgba(74,127,160,0.18); }
+.match-badge.bye  { background:rgba(91,200,245,0.07); color:var(--foam); border:1px solid rgba(91,200,245,0.2); }
+
+.champion-banner {
+  background:rgba(245,200,66,0.08);
+  border:2px solid rgba(245,200,66,0.35);
+  border-radius:8px; padding:20px;
+  text-align:center; margin-bottom:24px;
+  display:none;
+}
+.champion-banner.visible { display:block; }
+.champion-label { font-size:0.62rem; letter-spacing:0.3em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.champion-name {
+  font-family:'Bebas Neue',cursive;
+  font-size:2.4rem; letter-spacing:0.06em; color:var(--gold);
+  text-shadow:0 0 30px rgba(245,200,66,0.4);
+}
+
+/* ── BUTTONS ── */
+.btn {
+  font-family:'Bebas Neue',cursive;
+  font-size:1rem; letter-spacing:0.16em;
+  padding:13px 28px; border:none; border-radius:6px;
+  cursor:pointer; transition:all 0.2s;
+  -webkit-user-select:none; user-select:none;
+  display:inline-block; text-align:center;
+}
+.btn-primary { background:var(--accent); color:var(--pool); }
+.btn-primary:hover,.btn-primary:active {
+  background:#33eaff;
+  box-shadow:0 0 20px rgba(0,229,255,0.35);
+  transform:translateY(-1px);
+}
+.btn-secondary { background:transparent; color:var(--foam); border:1px solid rgba(91,200,245,0.38); }
+.btn-secondary:hover { background:rgba(91,200,245,0.08); border-color:var(--foam); }
+.btn-ghost { background:transparent; color:var(--muted); border:1px solid rgba(74,127,160,0.28); font-size:0.84rem; }
+.btn-ghost:hover { color:var(--silver); border-color:var(--muted); }
+.btn-danger { background:transparent; color:var(--danger); border:1px solid rgba(255,90,90,0.28); font-size:0.84rem; }
+.btn-danger:hover { background:rgba(255,90,90,0.07); }
+.btn:disabled { opacity:0.32; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+.btn-full { width:100%; }
+
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.btn-row .btn { flex:1; min-width:120px; }
+
+/* ── WINNER PANEL ── */
+.winner-panel {
+  margin-top: 20px;
+  background: rgba(245,200,66,0.08);
+  border: 2px solid rgba(245,200,66,0.35);
+  border-radius: 8px;
+  padding: 22px 18px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.winner-panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.winner-panel-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.winner-panel-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-winner {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid rgba(245,200,66,0.4);
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  padding: 14px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 130px;
+  transition: all 0.2s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.btn-winner:hover, .btn-winner:active {
+  background: rgba(245,200,66,0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(245,200,66,0.2);
+}
+
+/* misc */
+.spacer { height:16px; }
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SCREEN 1 — MODE SELECT
+══════════════════════════════════ -->
+<div class="screen active" id="screen-mode">
+  <div class="logo">
+    <div class="logo-title">HANDICAP HEAT</div>
+    <div class="logo-sub">Competitive Swimming Race Timer</div>
+  </div>
+
+  <div class="section-label">Choose Mode</div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="pickMode('manual')">
+      <div class="mode-icon">🏊</div>
+      <div class="mode-info">
+        <div class="mode-name">Single Race</div>
+        <div class="mode-desc">Pick two swimmers manually and get the handicap start times.</div>
+      </div>
+    </div>
+    <div class="mode-card" onclick="pickMode('bracket')">
+      <div class="mode-icon">🏆</div>
+      <div class="mode-info">
+        <div class="mode-name">Tournament Bracket</div>
+        <div class="mode-desc">Auto-generate a bracket from your roster and run it round by round.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 2 — SETUP (shared)
+══════════════════════════════════ -->
+<div class="screen" id="screen-setup">
+  <div class="logo">
+    <div class="logo-title">HANDICAP HEAT</div>
+  </div>
+
+  <!-- Upload -->
+  <div class="section-label">Upload Roster CSV</div>
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="pdfInput" accept=".csv,.txt" />
+    <div class="upload-icon">📄</div>
+    <div class="upload-title">Drop CSV or Tap to Browse</div>
+    <div class="upload-hint-text">HY-TEK Individual Top Times export — <em>no headers needed</em></div>
+  </div>
+  <div class="format-note">
+    <strong>Accepted:</strong> HY-TEK's TEAM MANAGER "Individual Top Times" CSV export. Name and time are parsed automatically.
+  </div>
+  <div class="parse-status" id="parseStatus">
+    <div class="spinner" id="parseSpinner" style="display:none;"></div>
+    <span id="parseStatusText"></span>
+  </div>
+
+  <!-- Manual selectors (single race mode only) -->
+  <div id="manualSelectors" class="hidden">
+    <div class="section-label">Select Racers</div>
+    <div class="selector-pair">
+      <div class="sel-group">
+        <label>Lane 1</label>
+        <select class="swimmer-select" id="select1" onchange="onSelectChange()">
+          <option value="" disabled selected>Choose…</option>
+        </select>
+      </div>
+      <div class="sel-vs">VS</div>
+      <div class="sel-group">
+        <label>Lane 2</label>
+        <select class="swimmer-select" id="select2" onchange="onSelectChange()">
+          <option value="" disabled selected>Choose…</option>
+        </select>
+      </div>
+    </div>
+    <div class="handicap-banner" id="handicapBanner"></div>
+  </div>
+
+  <!-- Bracket info (bracket mode only) -->
+  <div id="bracketInfo" class="hidden">
+    <div class="handicap-banner visible" id="bracketInfoBanner">
+      Upload your roster PDF above. A bracket will be generated automatically.
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goBack()">← Back</button>
+    <button class="btn btn-primary" id="proceedBtn" disabled onclick="proceed()">Continue →</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn btn-danger" id="clearBtn" onclick="clearRoster()" style="display:none;">✕ Clear Roster</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 3 — RACE (single)
+══════════════════════════════════ -->
+<div class="screen" id="screen-race">
+  <div class="race-header">
+    <div class="race-round" id="raceRoundLabel">Single Race</div>
+    <div class="race-title" id="raceTitleLabel">Ready to Race</div>
+  </div>
+
+  <div class="matchup">
+    <div class="swimmer-card active" id="card1">
+      <div class="card-lane">LANE 1</div>
+      <div class="card-name" id="cName1">—</div>
+      <div class="card-event" id="cEvent1">—</div>
+      <div class="card-time"  id="cTime1">—</div>
+      <div class="card-tag"   id="cTag1"></div>
+    </div>
+    <div class="card-vs">VS</div>
+    <div class="swimmer-card active" id="card2">
+      <div class="card-lane">LANE 2</div>
+      <div class="card-name" id="cName2">—</div>
+      <div class="card-event" id="cEvent2">—</div>
+      <div class="card-time"  id="cTime2">—</div>
+      <div class="card-tag"   id="cTag2"></div>
+    </div>
+  </div>
+
+  <div class="countdown-display" id="countdownDisplay">
+    <div class="countdown-num" id="countdownNum" style="opacity:0;">3</div>
+    <div class="countdown-cue" id="countdownCue" style="opacity:0;color:var(--gold);"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="raceBackBtn" onclick="goToSetup()">← Back</button>
+    <button class="btn btn-primary btn-full" id="startBtn" onclick="startCountdown()">🏁 Start Race</button>
+  </div>
+
+  <!-- WINNER PANEL (bracket mode only) -->
+  <div class="winner-panel" id="winnerPanel" style="display:none;">
+    <div class="winner-panel-label">🏁 Race Complete — Who Won?</div>
+    <div class="winner-panel-btns">
+      <button class="btn btn-winner" id="winnerBtn1" onclick="recordWinner(1)"></button>
+      <button class="btn btn-winner" id="winnerBtn2" onclick="recordWinner(2)"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN 4 — BRACKET
+══════════════════════════════════ -->
+<div class="screen" id="screen-bracket">
+  <div class="bracket-title">Tournament</div>
+  <div class="bracket-sub" id="bracketSubtitle">0 swimmers · 0 rounds</div>
+
+  <div id="bracketRounds"></div>
+
+  <div class="champion-banner" id="championBanner">
+    <div class="champion-label">🏆 Tournament Champion</div>
+    <div class="champion-name" id="championName">—</div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-ghost" onclick="goBack()">← Back</button>
+    <button class="btn btn-primary btn-full" id="bracketNextBtn" onclick="runNextMatch()" disabled>
+      Start Next Match
+    </button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let mode        = 'manual';   // 'manual' | 'bracket'
+let swimmers    = [];
+let swimmer1    = null;
+let swimmer2    = null;
+let hsWho       = 0;          // 1 or 2 — who gets headstart
+let hsSecs      = 0;
+let raceRunning = false;
+
+// bracket state
+let bracket     = [];   // array of rounds; each round = array of {s1,s2,winner}
+let matchCursor = 0;    // flat index into all matches
+let allMatches  = [];   // flat list
+
+// ══════════════════════════════════════════
+//  SCREEN NAV
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function pickMode(m) {
+  mode = m;
+  document.getElementById('manualSelectors').classList.toggle('hidden', m !== 'manual');
+  document.getElementById('bracketInfo').classList.toggle('hidden',     m !== 'bracket');
+  updateProceedBtn();
+  showScreen('screen-setup');
+}
+
+function goBack() { showScreen('screen-mode'); }
+
+function goToSetup() {
+  if (mode === 'bracket') showScreen('screen-bracket');
+  else showScreen('screen-setup');
+}
+
+function proceed() {
+  if (mode === 'manual') {
+    populateRaceScreen();
+    showScreen('screen-race');
+  } else {
+    buildBracket();
+    showScreen('screen-bracket');
+  }
+}
+
+// ══════════════════════════════════════════
+//  CSV UPLOAD — HY-TEK Individual Top Times
+// ══════════════════════════════════════════
+const pdfInput   = document.getElementById('pdfInput');
+const uploadZone = document.getElementById('uploadZone');
+
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleCSV(f);
+  else setStatus('error', 'Please drop a CSV file.');
+});
+pdfInput.addEventListener('change', () => { if (pdfInput.files[0]) handleCSV(pdfInput.files[0]); });
+
+function setStatus(type, msg) {
+  const el  = document.getElementById('parseStatus');
+  const txt = document.getElementById('parseStatusText');
+  const sp  = document.getElementById('parseSpinner');
+  el.className = 'parse-status ' + type;
+  txt.textContent = msg;
+  sp.style.display = type === 'loading' ? 'block' : 'none';
+}
+
+function parseHytekName(raw) {
+  // e.g. "David Brooks  (16)  M   (Yr: SO)" → "David Brooks"
+  return raw.replace(/\s*\(\d+\).*$/, '').replace(/\s+M\s*$/, '').replace(/\s+W\s*$/, '').trim();
+}
+
+function parseHytekTime(raw) {
+  // e.g. "   26.60" or "   1:03.45"
+  const s = raw.trim();
+  if (s.includes(':')) {
+    const [m, sec] = s.split(':');
+    return parseFloat(m) * 60 + parseFloat(sec);
+  }
+  return parseFloat(s);
+}
+
+function handleCSV(file) {
+  setStatus('loading', `Reading "${file.name}"…`);
+  const reader = new FileReader();
+  reader.onerror = () => setStatus('error', 'Failed to read file.');
+  reader.onload = e => {
+    try {
+      const lines = e.target.result.split(/\r?\n/).filter(l => l.trim());
+      const parsed = [];
+      const seen   = new Set();
+
+      for (const line of lines) {
+        // Simple CSV split respecting quoted fields
+        const cols = line.match(/("(?:[^"]|"")*"|[^,]*)/g)
+          .map(c => c.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+
+        // HY-TEK format: col 13 = name+age+gender, col 21 = time
+        if (cols.length < 22) continue;
+        const nameRaw = cols[13];
+        const timeRaw = cols[21];
+        if (!nameRaw || !timeRaw) continue;
+
+        const name = parseHytekName(nameRaw);
+        const time = parseHytekTime(timeRaw);
+        if (!name || isNaN(time) || time <= 0) continue;
+
+        // Deduplicate — keep first occurrence (already best time from HY-TEK export)
+        if (seen.has(name)) continue;
+        seen.add(name);
+
+        parsed.push({ name, event: '50 Free', time: Math.round(time * 100) / 100 });
+      }
+
+      if (parsed.length < 2) throw new Error(`Only ${parsed.length} valid swimmer(s) found — need at least 2.`);
+
+      swimmers = parsed;
+      setStatus('success', `✓ Imported ${swimmers.length} swimmers from "${file.name}"`);
+      document.getElementById('clearBtn').style.display = 'inline-block';
+
+      if (mode === 'manual') {
+        populateDropdowns();
+        document.getElementById('manualSelectors').classList.remove('hidden');
+      }
+      updateProceedBtn();
+
+    } catch (err) {
+      setStatus('error', '✗ ' + (err.message || 'Failed to parse CSV.'));
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearRoster() {
+  swimmers = []; swimmer1 = swimmer2 = null;
+  document.getElementById('parseStatus').className = 'parse-status';
+  document.getElementById('clearBtn').style.display = 'none';
+  document.getElementById('handicapBanner').classList.remove('visible');
+  document.getElementById('manualSelectors').classList.add('hidden');
+  pdfInput.value = '';
+  updateProceedBtn();
+}
+
+// ══════════════════════════════════════════
+//  MANUAL DROPDOWNS
+// ══════════════════════════════════════════
+function populateDropdowns() {
+  const sorted = [...swimmers].sort((a,b)=>a.name.localeCompare(b.name));
+  const opts   = sorted.map((s,i) => `<option value="${i}">${escHtml(s.name)} — ${formatTime(s.time)}</option>`).join('');
+  const blank  = '<option value="" disabled selected>Choose…</option>';
+  document.getElementById('select1').innerHTML = blank + opts;
+  document.getElementById('select2').innerHTML = blank + opts;
+  swimmer1 = swimmer2 = null;
+  document.getElementById('handicapBanner').classList.remove('visible');
+}
+
+function onSelectChange() {
+  const sorted = [...swimmers].sort((a,b)=>a.name.localeCompare(b.name));
+  const v1 = document.getElementById('select1').value;
+  const v2 = document.getElementById('select2').value;
+  swimmer1 = v1 !== '' ? sorted[parseInt(v1)] : null;
+  swimmer2 = v2 !== '' ? sorted[parseInt(v2)] : null;
+
+  if (swimmer1 && swimmer2 && v1 !== v2) {
+    calcHandicap();
+    const banner = document.getElementById('handicapBanner');
+    const slower = hsWho === 1 ? swimmer1 : swimmer2;
+    banner.innerHTML = `⏱ <strong>${escHtml(slower.name)}</strong> gets a <strong>${hsSecs}s</strong> headstart`;
+    banner.classList.add('visible');
+  } else {
+    document.getElementById('handicapBanner').classList.remove('visible');
+  }
+  updateProceedBtn();
+}
+
+function calcHandicap() {
+  const diff = Math.abs(swimmer1.time - swimmer2.time);
+  hsSecs = Math.round(diff * 10) / 10;
+  hsWho  = swimmer1.time > swimmer2.time ? 1 : 2;
+}
+
+function updateProceedBtn() {
+  const btn = document.getElementById('proceedBtn');
+  if (mode === 'manual') {
+    const v1 = document.getElementById('select1').value;
+    const v2 = document.getElementById('select2').value;
+    btn.disabled = !(swimmer1 && swimmer2 && v1 !== v2);
+  } else {
+    btn.disabled = swimmers.length < 2;
+  }
+}
+
+// ══════════════════════════════════════════
+//  RACE SCREEN — populate
+// ══════════════════════════════════════════
+function populateRaceScreen(s1, s2, roundLabel, matchLabel) {
+  if (s1) swimmer1 = s1;
+  if (s2) swimmer2 = s2;
+  calcHandicap();
+
+  document.getElementById('raceRoundLabel').textContent = roundLabel || 'Single Race';
+  document.getElementById('raceTitleLabel').textContent = matchLabel ||
+    `${swimmer1.name.split(' ')[0]}  vs  ${swimmer2.name.split(' ')[0]}`;
+
+  // Card 1
+  document.getElementById('cName1').textContent  = swimmer1.name;
+  document.getElementById('cEvent1').textContent = swimmer1.event;
+  document.getElementById('cTime1').textContent  = formatTime(swimmer1.time) + ' PB';
+
+  // Card 2
+  document.getElementById('cName2').textContent  = swimmer2.name;
+  document.getElementById('cEvent2').textContent = swimmer2.event;
+  document.getElementById('cTime2').textContent  = formatTime(swimmer2.time) + ' PB';
+
+  // Tags
+  const t1 = document.getElementById('cTag1');
+  const t2 = document.getElementById('cTag2');
+  if (hsWho === 1) {
+    t1.textContent = `+${hsSecs}s headstart`; t1.className = 'card-tag has-start';
+    t2.textContent = 'Scratch';               t2.className = 'card-tag scratch';
+  } else {
+    t2.textContent = `+${hsSecs}s headstart`; t2.className = 'card-tag has-start';
+    t1.textContent = 'Scratch';               t1.className = 'card-tag scratch';
+  }
+
+  // Reset countdown
+  resetCountdown();
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('raceBackBtn').disabled = false;
+}
+
+// ══════════════════════════════════════════
+//  AUDIO — single unified clear beep
+//  iOS fix: unlock AudioContext on first touch
+// ══════════════════════════════════════════
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+// iOS Safari requires AudioContext to be resumed inside a user gesture.
+// We unlock it on the very first tap anywhere on the page.
+function unlockAudio() {
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      // Play a silent buffer to fully ungate iOS audio
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    });
+  }
+  document.removeEventListener('touchstart', unlockAudio);
+  document.removeEventListener('touchend',   unlockAudio);
+  document.removeEventListener('click',      unlockAudio);
+}
+document.addEventListener('touchstart', unlockAudio, { passive: true });
+document.addEventListener('touchend',   unlockAudio, { passive: true });
+document.addEventListener('click',      unlockAudio);
+
+function playBeep(freq = 880, duration = 0.18, volume = 0.6) {
+  const ctx  = getCtx();
+  const t    = ctx.currentTime;
+  const osc  = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(volume, t + 0.01);
+  gain.gain.setValueAtTime(volume, t + duration - 0.03);
+  gain.gain.linearRampToValueAtTime(0, t + duration);
+  osc.start(t); osc.stop(t + duration + 0.05);
+}
+
+// ══════════════════════════════════════════
+//  COUNTDOWN + START SEQUENCE
+// ══════════════════════════════════════════
+let countdownTimer = null;
+
+function resetCountdown() {
+  if (countdownTimer) { clearTimeout(countdownTimer); countdownTimer = null; }
+  raceRunning = false;
+  setCountdownDisplay('', '', 0, 0);
+}
+
+function setCountdownDisplay(num, cue, numOpacity, cueOpacity) {
+  const n = document.getElementById('countdownNum');
+  const c = document.getElementById('countdownCue');
+  n.textContent = num;
+  c.textContent = cue;
+  n.style.opacity = numOpacity;
+  c.style.opacity = cueOpacity;
+}
+
+function startCountdown() {
+  if (raceRunning) return;
+  raceRunning = true;
+  getCtx().resume();
+  document.getElementById('startBtn').disabled    = true;
+  document.getElementById('raceBackBtn').disabled = true;
+
+  const steps = [
+    { num:'3', t:0    },
+    { num:'2', t:900  },
+    { num:'1', t:1800 },
+  ];
+
+  // silent countdown — display only, no beeps
+  steps.forEach(s => {
+    countdownTimer = setTimeout(() => {
+      setCountdownDisplay(s.num, '', 1, 0);
+      setTimeout(() => setCountdownDisplay(s.num, '', 0.15, 0), 700);
+    }, s.t);
+  });
+
+  // FIRE headstart swimmer
+  countdownTimer = setTimeout(() => {
+    const firstName  = (hsWho === 1 ? swimmer1 : swimmer2).name.split(' ')[0];
+    setCountdownDisplay('GO!', `🏊 ${firstName} — GO!`, 1, 1);
+    playBeep(1047, 0.22, 0.7); // high clear beep
+    setTimeout(() => setCountdownDisplay('', `🏊 ${firstName} — GO!`, 0, 0.4), 600);
+  }, 2700);
+
+  // FIRE scratch swimmer after headstart gap (capped at 8s for usability)
+  const delay = Math.min(hsSecs * 1000, 8000);
+  countdownTimer = setTimeout(() => {
+    const secondName = (hsWho === 1 ? swimmer2 : swimmer1).name.split(' ')[0];
+    setCountdownDisplay('GO!', `🏊 ${secondName} — GO!`, 1, 1);
+    playBeep(1047, 0.22, 0.7); // same clear beep
+    setTimeout(() => {
+      setCountdownDisplay('', '', 0, 0);
+      onRaceComplete();
+    }, 600);
+  }, 2700 + delay);
+}
+
+function onRaceComplete() {
+  raceRunning = false;
+  document.getElementById('startBtn').disabled    = false;
+  document.getElementById('raceBackBtn').disabled = false;
+  // clear countdown number but leave cue area free for winner prompt
+  const numEl = document.getElementById('countdownNum');
+  numEl.style.opacity = 0; numEl.textContent = '';
+
+  if (mode === 'bracket') {
+    showWinnerPrompt();
+  } else {
+    setCountdownDisplay('', '✓ Both swimmers started', 0, 1);
+    setTimeout(() => setCountdownDisplay('', '', 0, 0), 2500);
+  }
+}
+
+// ══════════════════════════════════════════
+//  BRACKET — BUILD
+// ══════════════════════════════════════════
+function buildBracket() {
+  // Shuffle pool
+  // Fisher-Yates shuffle for truly random pairings
+  let pool = [...swimmers];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  bracket    = [];
+  allMatches = [];
+
+  // Build round by round.
+  // Each round: pair everyone up. If odd count, last swimmer gets a bye (winner = themselves).
+  // Collect all non-bye match objects in allMatches for the race cursor.
+  let currentPool = pool.map(s => ({ swimmer: s, fromMatch: null })); // slots
+
+  while (currentPool.length > 1) {
+    const roundMatches = [];
+    const nextPool     = [];
+
+    for (let i = 0; i < currentPool.length; i += 2) {
+      const slotA = currentPool[i];
+      const slotB = currentPool[i + 1] || null;
+
+      if (!slotB) {
+        // Odd swimmer out — bye: auto-advance to next round
+        const byeMatch = {
+          s1: slotA.swimmer,   // already known if it's R1; null if pending from prev round
+          s2: null,
+          winner: slotA.swimmer || null,  // if swimmer known, resolve now
+          isBye: true,
+          slotA,
+          slotB: null,
+          roundIdx: bracket.length
+        };
+        roundMatches.push(byeMatch);
+        allMatches.push(byeMatch);
+        nextPool.push({ swimmer: byeMatch.winner, fromMatch: byeMatch });
+      } else {
+        const match = {
+          s1: slotA.swimmer || null,
+          s2: slotB.swimmer || null,
+          winner: null,
+          isBye: false,
+          slotA,
+          slotB,
+          roundIdx: bracket.length
+        };
+        roundMatches.push(match);
+        allMatches.push(match);
+        nextPool.push({ swimmer: null, fromMatch: match });
+      }
+    }
+
+    bracket.push(roundMatches);
+    currentPool = nextPool;
+  }
+
+  matchCursor = 0;
+  advanceCursor(); // skip any leading byes (shouldn't be any in R1 but safety)
+
+  renderBracket();
+  updateBracketBtn();
+}
+
+function advanceCursor() {
+  // Skip auto-resolved bye matches
+  while (matchCursor < allMatches.length && allMatches[matchCursor].isBye) matchCursor++;
+}
+
+// ══════════════════════════════════════════
+//  BRACKET — RENDER
+// ══════════════════════════════════════════
+function renderBracket() {
+  const totalRounds = bracket.length;
+  document.getElementById('bracketSubtitle').textContent =
+    `${swimmers.length} swimmers · ${totalRounds} round${totalRounds !== 1 ? 's' : ''}`;
+
+  const container = document.getElementById('bracketRounds');
+  container.innerHTML = '';
+
+  bracket.forEach((round, ri) => {
+    // Round label
+    const labelEl = document.createElement('div');
+    labelEl.className = 'bracket-round-label';
+    labelEl.textContent =
+      ri === bracket.length - 1 ? '🏆 Final' :
+      ri === bracket.length - 2 && bracket.length > 2 ? 'Semi-Finals' :
+      `Round ${ri + 1}`;
+    container.appendChild(labelEl);
+
+    const matchesDiv = document.createElement('div');
+    matchesDiv.className = 'bracket-matches';
+
+    round.forEach(match => {
+      const flat       = allMatches.indexOf(match);
+      const isCurrent  = flat === matchCursor;
+      const isDone     = match.winner !== null;
+
+      const div = document.createElement('div');
+
+      // ── BYE card ──
+      if (match.isBye) {
+        div.className = 'bracket-match completed';
+        const name = match.s1 ? escHtml(match.s1.name) : '<em style="color:var(--muted)">TBD</em>';
+        const time = match.s1 ? `<span class="match-winner-time">${formatTime(match.s1.time)}</span>` : '';
+        div.innerHTML = `
+          <div class="match-num">#${flat + 1}</div>
+          <div class="match-swimmers">
+            <div class="match-swimmer winner">${name} ${time}</div>
+          </div>
+          <span class="match-badge bye">BYE</span>`;
+        matchesDiv.appendChild(div);
+        return;
+      }
+
+      // ── Race card ──
+      div.className = 'bracket-match' +
+        (isCurrent && !isDone ? ' current' : '') +
+        (isDone ? ' completed' : '');
+      if (isCurrent && !isDone) div.onclick = () => launchBracketMatch(match);
+
+      const s1c = !isDone ? '' : match.winner === match.s1 ? ' winner' : ' loser';
+      const s2c = !isDone ? '' : match.winner === match.s2 ? ' winner' : ' loser';
+
+      const s1n = match.s1 ? escHtml(match.s1.name) : '<span class="tbd">TBD</span>';
+      const s2n = match.s2 ? escHtml(match.s2.name) : '<span class="tbd">TBD</span>';
+      const s1t = match.s1 ? `<span class="${isDone && match.winner===match.s1 ? 'match-winner-time':'match-time'}">${formatTime(match.s1.time)}</span>` : '';
+      const s2t = match.s2 ? `<span class="${isDone && match.winner===match.s2 ? 'match-winner-time':'match-time'}">${formatTime(match.s2.time)}</span>` : '';
+
+      const badge = isDone         ? `<span class="match-badge done">✓ Done</span>` :
+                    isCurrent      ? `<span class="match-badge go">▶ Race</span>` :
+                                     `<span class="match-badge wait">Waiting</span>`;
+
+      div.innerHTML = `
+        <div class="match-num">#${flat + 1}</div>
+        <div class="match-swimmers">
+          <div class="match-swimmer${s1c}">${s1n} ${s1t}</div>
+          <div class="match-vs">VS</div>
+          <div class="match-swimmer${s2c}">${s2n} ${s2t}</div>
+        </div>
+        ${badge}`;
+      matchesDiv.appendChild(div);
+    });
+
+    container.appendChild(matchesDiv);
+  });
+
+  // Champion banner
+  const last  = allMatches[allMatches.length - 1];
+  const champ = document.getElementById('championBanner');
+  if (last && last.winner) {
+    document.getElementById('championName').textContent = '🥇 ' + last.winner.name;
+    champ.classList.add('visible');
+  } else {
+    champ.classList.remove('visible');
+  }
+}
+
+function updateBracketBtn() {
+  const btn  = document.getElementById('bracketNextBtn');
+  const last = allMatches[allMatches.length - 1];
+  if (last && last.winner && !last.isBye) {
+    btn.textContent = '🏆 Tournament Complete';
+    btn.disabled = true;
+    return;
+  }
+  // find next raceable match
+  const next = allMatches[matchCursor];
+  if (!next || next.isBye) {
+    // Check if whole tournament is done
+    const undone = allMatches.find(m => !m.winner);
+    if (!undone) { btn.textContent = '🏆 Tournament Complete'; btn.disabled = true; }
+    else { btn.disabled = true; }
+    return;
+  }
+  const n1 = next.s1 ? next.s1.name.split(' ')[0] : '?';
+  const n2 = next.s2 ? next.s2.name.split(' ')[0] : '?';
+  btn.textContent = `▶ Race: ${n1} vs ${n2}`;
+  btn.disabled = false;
+}
+
+function runNextMatch() {
+  if (matchCursor >= allMatches.length) return;
+  launchBracketMatch(allMatches[matchCursor]);
+}
+
+function launchBracketMatch(match) {
+  if (!match.s1 || !match.s2) return;
+  const ri = match.roundIdx;
+  const totalRounds = bracket.length;
+  const roundLabel =
+    ri === totalRounds - 1 ? '🏆 Final' :
+    ri === totalRounds - 2 && totalRounds > 2 ? 'Semi-Finals' :
+    `Round ${ri + 1}`;
+
+  populateRaceScreen(match.s1, match.s2, roundLabel,
+    `${match.s1.name.split(' ')[0]}  vs  ${match.s2.name.split(' ')[0]}`);
+  showScreen('screen-race');
+  window._activeMatch = match;
+}
+
+// ══════════════════════════════════════════
+//  WINNER PROMPT (bracket only)
+// ══════════════════════════════════════════
+function showWinnerPrompt() {
+  const match = window._activeMatch;
+  if (!match) return;
+  const cueEl = document.getElementById('countdownCue');
+  cueEl.style.opacity = 0; cueEl.innerHTML = '';
+  const panel = document.getElementById('winnerPanel');
+  document.getElementById('winnerBtn1').textContent = swimmer1.name;
+  document.getElementById('winnerBtn2').textContent = swimmer2.name;
+  panel.style.display = 'block';
+  requestAnimationFrame(() => panel.classList.add('visible'));
+}
+
+function recordWinner(lane) {
+  const match = window._activeMatch;
+  if (!match) return;
+
+  const panel = document.getElementById('winnerPanel');
+  panel.classList.remove('visible');
+  setTimeout(() => { panel.style.display = 'none'; }, 300);
+
+  match.winner = lane === 1 ? swimmer1 : swimmer2;
+
+  // Propagate winner into the next round's match
+  propagateWinner(match);
+
+  matchCursor++;
+  advanceCursor();
+  window._activeMatch = null;
+
+  renderBracket();
+  updateBracketBtn();
+  showScreen('screen-bracket');
+}
+
+function propagateWinner(completedMatch) {
+  // Find the match in the next round whose slotA or slotB references this match
+  const nextRoundIdx = completedMatch.roundIdx + 1;
+  if (nextRoundIdx >= bracket.length) return;
+
+  for (const m of bracket[nextRoundIdx]) {
+    if (m.slotA && m.slotA.fromMatch === completedMatch) {
+      m.s1 = completedMatch.winner;
+      // If it's a bye match (no s2), auto-resolve it too
+      if (m.isBye) { m.winner = m.s1; propagateWinner(m); }
+      return;
+    }
+    if (m.slotB && m.slotB.fromMatch === completedMatch) {
+      m.s2 = completedMatch.winner;
+      if (m.isBye) { m.winner = m.s2 || m.s1; propagateWinner(m); }
+      return;
+    }
+  }
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function formatTime(s) {
+  if (s < 60) return s.toFixed(2) + 's';
+  const m   = Math.floor(s / 60);
+  const sec = (s % 60).toFixed(2).padStart(5, '0');
+  return `${m}:${sec}`;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
