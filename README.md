@@ -1,4 +1,4 @@
-This is to create competitive races using the best times.  In order to work it will need an API key for claude.ai.  This key uses claude to parse the pdf file to assocaite the best time with each athlete.  I used Hytek TeamManager and a 2 column report.  Export the file as a CSV and save.
+This is to create competitive races using the best times.  I used Hytek TeamManager and a 2 column report.  Export the file as a CSV and save.
 ******
 Issues with iphone - start sound not playing
 *******
