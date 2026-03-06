@@ -926,7 +926,7 @@ function startCountdown() {
 
   // Schedule both GO beeps synchronously — AudioContext clock handles timing
   const now   = ctx.currentTime;
-  const delay = Math.min(hsSecs, 8);
+  const delay = hsSecs; // full gap, no cap — AudioContext is accurate
   playBeepAt(ctx, now + 2.7);
   playBeepAt(ctx, now + 2.7 + delay);
 
@@ -945,19 +945,43 @@ function startCountdown() {
     }, s.t));
   });
 
-  // Visual GO cues (audio already scheduled above via AudioContext)
+  // First GO — visual fires at t=2700ms (matches audio at now+2.7s)
   countdownTimers.push(setTimeout(() => {
     setCountdownDisplay('GO!', `🏊 ${firstName} — GO!`, 1, 1);
     countdownTimers.push(setTimeout(() => setCountdownDisplay('', `🏊 ${firstName} — GO!`, 0, 0.4), 600));
   }, 2700));
 
-  countdownTimers.push(setTimeout(() => {
-    setCountdownDisplay('GO!', `🏊 ${secondName} — GO!`, 1, 1);
-    countdownTimers.push(setTimeout(() => {
-      setCountdownDisplay('', '', 0, 0);
-      onRaceComplete();
-    }, 600));
-  }, 2700 + delay * 1000));
+  // Second GO — use AudioContext clock to derive the exact wall-clock delay
+  // so that setTimeout drift doesn't accumulate over long handicap gaps.
+  const firstGoAudioTime = now + 2.7;
+  const secondGoAudioTime = firstGoAudioTime + delay;
+
+  function scheduleSecondGo() {
+    const remaining = (secondGoAudioTime - ctx.currentTime) * 1000;
+    if (remaining <= 0) {
+      // Trigger immediately if we somehow arrive late
+      setCountdownDisplay('GO!', `🏊 ${secondName} — GO!`, 1, 1);
+      countdownTimers.push(setTimeout(() => {
+        setCountdownDisplay('', '', 0, 0);
+        onRaceComplete();
+      }, 600));
+      return;
+    }
+    // Re-check every 100ms — AudioContext.currentTime is the accurate clock
+    if (remaining > 150) {
+      countdownTimers.push(setTimeout(scheduleSecondGo, 100));
+    } else {
+      countdownTimers.push(setTimeout(() => {
+        setCountdownDisplay('GO!', `🏊 ${secondName} — GO!`, 1, 1);
+        countdownTimers.push(setTimeout(() => {
+          setCountdownDisplay('', '', 0, 0);
+          onRaceComplete();
+        }, 600));
+      }, remaining));
+    }
+  }
+
+  scheduleSecondGo();
 }
 
 function onRaceComplete() {
